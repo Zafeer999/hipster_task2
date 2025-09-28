@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Database\Factories\DiscountFactory;
-use Carbon\Carbon;
 
 class Discount extends Model
 {
@@ -47,11 +46,11 @@ class Discount extends Model
     }
 
     /**
-     * Compatibility method: return the effective ends_at/expiry.
+     * Returns expiry preferring expires_at (legacy) when present, otherwise ends_at.
      */
     public function getEffectiveEndsAtAttribute()
     {
-        return $this->ends_at ?? $this->expires_at;
+        return $this->expires_at ?? $this->ends_at;
     }
 
     public function isActiveNow(): bool
@@ -65,9 +64,6 @@ class Discount extends Model
         return true;
     }
 
-    /**
-     * Ensure factories are resolvable in Testbench.
-     */
     protected static function newFactory()
     {
         return DiscountFactory::new();

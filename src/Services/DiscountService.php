@@ -2,15 +2,17 @@
 
 namespace Zafeer\Discounts\Services;
 
-use Zafeer\Discounts\Events\DiscountRevoked;
-use Zafeer\Discounts\Services\DiscountManager;
 use Zafeer\Discounts\Models\Discount;
-use Zafeer\Discounts\Models\DiscountAudit;
 use Zafeer\Discounts\Models\UserDiscount;
 
 class DiscountService
 {
-    public function __construct(protected DiscountManager $manager) {}
+    protected DiscountManager $manager;
+
+    public function __construct(DiscountManager $manager)
+    {
+        $this->manager = $manager;
+    }
 
     public function assign($user, Discount $discount): UserDiscount
     {
@@ -19,41 +21,36 @@ class DiscountService
 
     public function revoke($user, Discount $discount): bool
     {
-        $ud = UserDiscount::where('user_id', $user->id)
-            ->where('discount_id', $discount->id)
-            ->first();
-
-        if (! $ud) return false;
-        $ud->update(['revoked_at' => now()]);
-        $this->events->dispatch(new DiscountRevoked($user, $discount));
-
-        DiscountAudit::create([
-            'idempotency_key' => (string) Str::uuid(),
-            'user_id' => $user->id,
-            'discount_id' => $discount->id,
-            'action' => 'revoked',
-            'applied' => null,
-            'original_amount' => null,
-            'final_amount' => null,
-            'meta' => ['user_discount_id' => $ud->id],
-        ]);
-
-        return true;
+        return $this->manager->revoke($user, $discount);
     }
 
-    public function eligibleFor($user, Discount $discount): bool
+    /**
+     * If only $user provided, return a collection of eligible discounts for that user.
+     * If $discount provided, return boolean eligible for that specific discount.
+     */
+    public function eligibleFor($user, ?Discount $discount = null)
     {
+        if ($discount === null) {
+            return $this->manager->eligibleForUser($user);
+        }
+
         return $this->manager->eligibleFor($user, $discount);
     }
 
+    /**
+     * Apply discounts. Tests expect the *final numeric amount* from this service.
+     * Return float final amount for compatibility with tests.
+     */
     public function apply($user, float $amount, array $opts = []): float
     {
         $res = $this->manager->apply($user, $amount, $opts);
 
-        if (is_array($res) && array_key_exists('final', $res)) {
+        // Manager returns an array with 'final' key; return numeric final for test compatibility.
+        if (is_array($res) && isset($res['final'])) {
             return (float) $res['final'];
         }
 
+        // Fallback: if manager returned float already, cast and return
         return (float) $res;
     }
 }

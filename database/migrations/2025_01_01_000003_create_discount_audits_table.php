@@ -13,13 +13,14 @@ class CreateDiscountAuditsTable extends Migration
             $table->uuid('idempotency_key')->nullable()->index();
             $table->unsignedBigInteger('user_id')->index();
             $table->unsignedBigInteger('discount_id')->nullable()->index();
-            $table->string('action')->nullable()->index();
-            $table->json('applied')->nullable();
+            $table->string('action')->nullable()->index(); // e.g. 'assigned','revoked','applied'
+            $table->json('applied')->nullable(); // details of applied discounts
             $table->decimal('original_amount', 14, 4)->nullable();
             $table->decimal('final_amount', 14, 4)->nullable();
-            $table->json('meta')->nullable();
             $table->timestamps();
-            $table->unique(['idempotency_key', 'user_id']);
+
+            // unique per idempotency_key + user
+            $table->unique(['idempotency_key','user_id']);
         });
     }
 

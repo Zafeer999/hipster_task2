@@ -10,11 +10,11 @@ class DiscountServiceProvider extends ServiceProvider
 {
     public function boot()
     {
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
         $this->publishes([
             __DIR__ . '/../config/discounts.php' => config_path('discounts.php'),
         ], 'config');
-
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
     }
 
     public function register()

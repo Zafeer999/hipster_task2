@@ -16,12 +16,10 @@ class DiscountAudit extends Model
         'applied',
         'original_amount',
         'final_amount',
-        'meta',
     ];
 
     protected $casts = [
         'applied' => 'array',
-        'meta' => 'array',
         'original_amount' => 'float',
         'final_amount' => 'float',
     ];
